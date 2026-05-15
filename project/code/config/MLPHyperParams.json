@@ -1,0 +1,19 @@
+{
+  "Seed": 42,
+  "Device": "auto",
+  "LR": 0.0001,
+  "NumEpochs": 100,
+  "EarlyStopPatience": 10,
+  "BatchSize": 8192,
+  "ValidBatchSize": 8192,
+  "PredictBatchSize": 32768,
+  "HiddenDims": [
+    512,
+    256
+  ],
+  "Activation": "SiLU",
+  "CriterionName": "MSE",
+  "OptimizerName": "AdamW",
+  "DropoutRate": 0.2,
+  "WeightDecay": 0.00001
+}
