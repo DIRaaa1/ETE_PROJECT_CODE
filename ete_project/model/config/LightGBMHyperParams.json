@@ -1,0 +1,52 @@
+{
+  "Seed": 42,
+
+  "Objective": "regression",
+  "Metric": "None",
+  "BoostingType": "gbdt",
+
+  "DeviceType": "cpu",
+  "NumThreads": 128,
+
+  "LearningRate": 0.00256,
+  "NumBoostRound": 100000,
+  "EarlyStoppingRounds": 1024,
+
+  "NumLeaves": 1024,
+  "MaxDepth": 8,
+  "MinDataInLeaf": 1024,
+  "MinSumHessianInLeaf": 0.00001,
+
+  "FeatureFraction": 0.8,
+  "FeatureFractionBynode": 0.8,
+  "BaggingFraction": 0.8,
+  "BaggingFreq": 1,
+
+  "LambdaL1": 0,
+  "LambdaL2": 0.0005,
+  "MinGainToSplit": 0.0,
+  "PathSmooth": 0.0,
+  "ExtraTrees": false,
+
+  "MaxBin": 2048,
+  "MinDataInBin": 512,
+
+  "Deterministic": true,
+  "ForceColWise": true,
+  "ForceRowWise": false,
+
+  "GpuPlatformId": -1,
+  "GpuDeviceId": -1,
+  "GpuUseDp": false,
+
+  "MonitorMetricName": "DailyTop10ExcessMarketMean",
+  "MonitorMetricMode": "auto",
+  "MonitorReturnColumn": "oto_d1_vwap-5min",
+  "MonitorRankBy": "pred",
+  "MonitorRankAbs": false,
+
+  "BestModelKeepNum": 1,
+  "ValidMetricEvalName": "monitor",
+  "LogEvalPeriod": 1,
+  "FreeRawData": false
+}
