@@ -1,0 +1,20 @@
+{
+  "Seed": 42,
+  "LR": 0.0001,
+  "NumEpochs": 200,
+  "EarlyStopPatience": 20,
+  "CriterionName": "MSE",
+  "DropoutRate": 0.2,
+  "WeightDecay": 0.00001,
+  "HiddenDim": 512,
+  "FFDim_2": 256,
+  "TrainBatchRows": 8192,
+  "ValidBatchRows": 8192,
+  "MonitorPredictBatchSize": 8192,
+  "TrainDataLoaderShuffle": true,
+  "MonitorMetricName": "DailyTop10ExcessMarketMean",
+  "MonitorMetricMode": "auto",
+  "MonitorReturnColumn": "oto_d1_vwap-5min",
+  "MonitorRankBy": "pred",
+  "MonitorRankAbs": false
+}

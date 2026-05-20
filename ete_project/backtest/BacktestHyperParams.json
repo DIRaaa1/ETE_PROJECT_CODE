@@ -1,0 +1,51 @@
+{
+  "prediction_path": "../save_file/MLP/predictions.csv",
+  "target_path": "",
+  "target_dir": "../basic_data/label_data/point_day1_label",
+  "label_dir": "",
+  "target_file_pattern": "point_label_check/{date}.parquet",
+  "bet_size_path": "",
+  "bet_size_dir": "",
+  "bet_size_file_pattern": "{date}.parquet",
+  "output_root": "outputs",
+  "run_name": "",
+  "date_col": "Date",
+  "symbol_col": "Code",
+  "signal_cols": [
+    "y_pred"
+  ],
+  "target_cols": [
+    "oto_d1_point"
+  ],
+  "bet_size_cols": [],
+  "unit_bet_col": "unit_bet",
+  "default_bet_size": 1.0,
+  "quantiles": [
+    1.0,
+    0.75,
+    0.5,
+    0.25
+  ],
+  "rank_by_abs": true,
+  "nonzero_signals_only": true,
+  "position_method": "sign",
+  "leverage_cap": 1.0,
+  "transaction_cost_bps": 0.0,
+  "annualization": 252.0,
+  "start_date": "",
+  "end_date": "",
+  "save_daily_files": true,
+  "save_positions": false,
+  "save_merged_input": false,
+  "drop_missing_targets": true,
+  "input_preview_rows": 1000,
+  "outlier_metrics": [
+    "pnl",
+    "ppd",
+    "ic",
+    "rank_ic"
+  ],
+  "outlier_top_k": 10,
+  "make_report": true,
+  "report_qrank": "qr_25"
+}
