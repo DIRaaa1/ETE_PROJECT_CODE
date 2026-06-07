@@ -1,0 +1,28 @@
+{
+  "Seed": 42,
+  "Device": "auto",
+  "LR": 0.0001,
+  "NumEpochs": 100,
+  "EarlyStopPatience": 10,
+  "BatchSize": 4096,
+  "ValidBatchSize": 4096,
+  "PredictBatchSize": 16384,
+  "CriterionName": "MSE",
+  "OptimizerName": "Adam",
+  "HiddenDims": [
+    128,
+    128
+  ],
+  "KANGridSize": 8,
+  "KANSplineOrder": 3,
+  "KANScaleNoise": 0.1,
+  "KANScaleBase": 1.0,
+  "KANScaleSpline": 1.0,
+  "KANBaseActivation": "silu",
+  "KANGridRange": [
+    -3.0,
+    3.0
+  ],
+  "DropoutRate": 0.2,
+  "WeightDecay": 0.00001
+}
