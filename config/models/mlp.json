@@ -1,0 +1,18 @@
+{
+  "display_name": "MLP",
+  "candidate": "mlp__a04",
+  "kind": "torch_tabular",
+  "hidden_dims": [512, 256, 128],
+  "activation": "silu",
+  "dropout": 0.2,
+  "normalization": "none",
+  "training": {
+    "learning_rate": 0.001,
+    "weight_decay": 0.00001,
+    "batch_size": 500000,
+    "predict_batch_size": 1000000,
+    "num_epochs": 5000,
+    "early_stop_patience": 30,
+    "grad_clip_max_norm": 3.0
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "project_root": "..",
+  "panel": "data/processed/panels/{protocol}.parquet",
+  "splits": "data/processed/date_roles.csv",
+  "train_dir": "outputs/{protocol}/{fold}/{model}",
+  "validation_predictions": "outputs/{protocol}/{fold}/{model}/validation_predictions.parquet",
+  "test_predictions": "outputs/{protocol}/{fold}/{model}/test_predictions.parquet",
+  "checkpoint": "outputs/{protocol}/{fold}/{model}/{checkpoint_file}",
+  "checkpoint_files": {
+    "lgb": "best_model.txt",
+    "xgb": "best_model.json",
+    "mlp": "best_model.pt",
+    "kan": "best_model.pt",
+    "gru": "best_model.pt",
+    "tcn": "best_model.pt",
+    "transformer": "best_model.pt",
+    "mamba": "best_model.pt"
+  },
+  "prediction_root": "outputs/{protocol}",
+  "backtest": "outputs/{protocol}/backtest"
+}

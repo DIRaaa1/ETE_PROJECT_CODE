@@ -1,0 +1,26 @@
+{
+  "display_name": "Transformer",
+  "candidate": "transformer__a02",
+  "kind": "torch_sequence",
+  "sequence_length": 10,
+  "d_model": 128,
+  "nhead": 4,
+  "num_layers": 2,
+  "dim_feedforward": 512,
+  "dropout": 0.2,
+  "pooling": "last",
+  "max_len": 512,
+  "positional_encoding": "sinusoidal",
+  "activation": "relu",
+  "norm_first": false,
+  "use_causal_mask": false,
+  "training": {
+    "learning_rate": 0.00005,
+    "weight_decay": 0.00001,
+    "batch_size": 15000,
+    "predict_batch_size": 50000,
+    "num_epochs": 5000,
+    "early_stop_patience": 30,
+    "grad_clip_max_norm": 3.0
+  }
+}

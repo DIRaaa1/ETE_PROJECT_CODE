@@ -1,0 +1,20 @@
+{
+  "display_name": "KAN",
+  "candidate": "kan__a05",
+  "kind": "torch_tabular",
+  "hidden_dims": [128, 64],
+  "dropout": 0.1,
+  "grid_size": 3,
+  "spline_order": 3,
+  "grid_range": [-2.0, 2.0],
+  "base_activation": "silu",
+  "training": {
+    "learning_rate": 0.0001,
+    "weight_decay": 0.00001,
+    "batch_size": 20000,
+    "predict_batch_size": 20000,
+    "num_epochs": 5000,
+    "early_stop_patience": 30,
+    "grad_clip_max_norm": 3.0
+  }
+}
