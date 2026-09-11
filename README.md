@@ -56,35 +56,12 @@ src/cross_sectional_ml/
   labels.py                 O2O and DE VWAP return construction
   splits.py                 Fixed chronological folds and purging
   universe.py               Eligibility, history, and final panel assembly
-tests/                      Unit tests for the full research pipeline
+tests/                      Unit tests for the main pipeline components
 ```
 
-The exact selected feature order is stored in `src/cross_sectional_ml/resources/o2o_features.csv` and `de_features.csv`. Each model has one implementation module in `src/cross_sectional_ml/models` and one configuration file in `config/models`. `src/cross_sectional_ml/models/registry.py` is the only loader for those configurations.
+Feature order is defined in `src/cross_sectional_ml/resources/o2o_features.csv` and `de_features.csv`. Model implementations are in `src/cross_sectional_ml/models`, with selected configurations in `config/models`.
 
-`config/paths.json` records the standard local layout. Every stored path is relative to the `code/` repository root; the project contains no machine-specific or server-specific absolute paths. Command-line paths may still be supplied explicitly when a run uses a different location.
-
-## Installation
-
-Python 3.10 or later is required. A standard development installation is:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
-```
-
-On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1`.
-
-Mamba-2 requires the optional `mamba-ssm` package and a compatible PyTorch, CUDA, and compiler environment. Install the base project first, then install the optional dependency on a supported Linux/CUDA system:
-
-```bash
-python -m pip install -e ".[mamba]"
-```
-
-The other seven models do not require this optional package.
-
-The archived experiment environment used Python 3.12.3, NumPy 2.3.2, pandas 3.0.3, PyArrow 24.0, PyTorch 2.8 with CUDA 12.8, LightGBM 4.6, XGBoost 3.3, and `mamba-ssm` 2.3.2.post1.
+Paths in `config/paths.json` are relative to the repository root and can be overridden on the command line.
 
 ## Input tables
 
@@ -92,27 +69,27 @@ Parquet is the primary format. CSV is also accepted where `read_frame` is used.
 
 ### Daily panel
 
-The daily input requires `Code`, `Date`, `open`, `high`, `low`, `close`, `pre_close`, `vol`, and `amount`. `adj_factor` and `vwap` are optional; the adjustment factor defaults to one and VWAP is derived when absent. Daily volume is interpreted in lots and daily amount in thousands, matching the feature builder's source-data convention.
+Daily inputs require `Code`, `Date`, `open`, `high`, `low`, `close`, `pre_close`, `vol`, and `amount`, with volume in lots and amount in thousands of currency units. `adj_factor` defaults to one, and `vwap` is calculated when absent.
 
-The input may be one table or a directory of Parquet files. If a daily file does not contain `Date`, its filename stem is used as the date.
+Supply one table or a directory of Parquet files; directory filenames provide `Date` when that column is absent.
 
 ### Minute panels
 
-Minute inputs require `Code`, `Minute`, `open`, `high`, `low`, `close`, `vol`, and `amount`; `adj_factor` is optional. A session may be supplied as one table or as a directory of minute files. When `Minute` is absent, each filename stem is used as the minute value.
+Minute inputs require `Code`, `Minute`, `open`, `high`, `low`, `close`, `vol`, and `amount`; `adj_factor` is optional. Prices should already be back-adjusted. Supply a session table or a directory of minute files; directory filenames provide `Minute` when that column is absent.
 
-`build_features.py` receives the signal-date minute session. DE additionally receives the first two minutes of the next session through `--early-open`. `build_labels.py` receives the complete entry session on `t+1` and exit session on `t+2`; it selects the protocol-specific VWAP windows internally.
+Features use the signal-date session, with DE adding the next session's first two minutes through `--early-open`. Labels use the complete entry and exit sessions and select the required VWAP windows internally.
 
 ### Eligibility and calendar tables
 
-The eligibility panel used by `prepare_panel.py` requires `Code`, entry-session `Date`, `is_st`, `is_limit_up_open`, and `is_limit_down_open`. The trading calendar maps each entry session back to its signal date. Calendar and signal-date tables require a `Date` column.
+The eligibility table requires `Code`, entry-session `Date`, `is_st`, `is_limit_up_open`, and `is_limit_down_open`. Calendar and signal-date tables require `Date`; the calendar links entry sessions to signal dates.
 
 All security codes are normalised to six-character strings. Supported exchange-code prefixes are `0`, `3`, and `6`.
 
 ## End-to-end workflow
 
-The feature and label builders process one signal date at a time. Repeat the first two steps for every required date and store the resulting Parquet files in protocol-specific directories.
+Run the Bash examples below from the repository root. Build features and labels for each signal date and save them in separate O2O and DE directories.
 
-Ten-session models also require feature panels for the nine trading sessions immediately before the first target date. These rows provide sequence context only and are not training, validation, or test targets.
+All models share a universe requiring ten-session feature histories, so include the nine sessions before the first target date as context. Raw daily inputs also need earlier history for features with lags of up to 60 sessions.
 
 ### 1. Construct features
 
@@ -133,7 +110,7 @@ python scripts/build_features.py \
   --output data/processed/features/de/20160104.parquet
 ```
 
-Each output contains `Code`, `Date`, and the selected protocol features. Feature values are transformed independently by signal date and column using the registered median/MAD clipping and cross-sectional scaling rule.
+Each output contains `Code`, `Date`, and the protocol features after median/MAD clipping and cross-sectional scaling within each signal date.
 
 ### 2. Construct labels
 
@@ -153,11 +130,11 @@ python scripts/build_labels.py \
   --output data/processed/labels/de/20160104.parquet
 ```
 
-Label outputs contain `Code`, `Date`, the raw VWAP return, and its same-date cross-sectional z-score.
+Each output contains `Code`, `Date`, the raw VWAP return, and its within-date z-score.
 
 ### 3. Assemble model panels
 
-First export the registered signal, entry, and exit dates:
+Export the date splits, then combine features, labels, and eligibility data:
 
 ```bash
 python scripts/build_splits.py \
@@ -186,11 +163,11 @@ python scripts/prepare_panel.py \
   --output data/processed/panels/de.parquet
 ```
 
-The final panel retains the complete feature history for sequence construction. `is_eligible` marks ex-ante prediction endpoints and `is_scoreable` marks endpoints with a finite training target. The target z-score is recomputed on the eligible cross-section.
+The panel retains sequence history and flags eligible predictions (`is_eligible`) and those with finite targets (`is_scoreable`). Targets are standardised within the eligible cross-section.
 
 ### 4. Train the eight models
 
-Train each protocol, fold, and model separately. With the standard layout in `config/paths.json`, only the experiment identifiers are needed:
+Train each model for both protocols and folds using paths from `config/paths.json` and settings from `config/models`:
 
 ```bash
 MODELS="lgb xgb mlp kan gru tcn transformer mamba"
@@ -208,13 +185,11 @@ for PROTOCOL in o2o de; do
 done
 ```
 
-`--panel`, `--splits`, and `--output` override the configured paths. `--device`, `--epochs`, `--batch-size`, and `--threads` provide runtime overrides. Registered experiment settings remain in the eight JSON files under `config/models`.
-
-Each training directory contains the selected checkpoint, validation and test predictions, training history, and a compact result record.
+Each run saves the selected checkpoint, validation and test predictions, and training records. Command-line options can override paths and runtime settings; see `python scripts/train.py --help`.
 
 ### 5. Run checkpoint inference
 
-Inference reads the full prepared panel as sequence context and emits only the requested active validation or test keys:
+Load a saved checkpoint to generate validation or test predictions, using the full panel as sequence context:
 
 ```bash
 python scripts/predict.py \
@@ -225,7 +200,7 @@ python scripts/predict.py \
   --model lgb
 ```
 
-`--panel`, `--splits`, `--checkpoint`, and `--output` can override the configured locations. Every output contains `model`, `fold`, `Date`, `Code`, and `prediction`. When the prepared panel contains the target and realised return, inference also retains them as `target` and `raw_return` so the result can be evaluated directly.
+Outputs contain `model`, `fold`, `Date`, `Code`, and `prediction`, with `target` and `raw_return` when available. Paths can be overridden on the command line.
 
 ### 6. Evaluate predictions and portfolios
 
@@ -239,18 +214,9 @@ python scripts/backtest.py \
   --protocol de
 ```
 
-`--predictions` and `--output` override the configured locations. The prediction root may instead contain one `lgb.parquet`, `xgb.parquet`, ..., `mamba.parquet` file. Every model file must contain unique `Date`, `Code`, and `prediction` rows on exactly the same stock-date universe. When training or labelled inference outputs are used, realised returns are read from the prediction files. Otherwise, supply an external `Date`, `Code`, and return table with `--outcomes` and `--outcome-column`.
+Use the configured prediction directories or one `<model>.parquet` file per model under `--predictions`. Files must contain `prediction` and share the same unique (`Date`, `Code`) keys. Returns come from these files or an external table supplied through `--outcomes` and `--outcome-column`.
 
-The backtest computes:
-
-- equal-date mean cross-sectional Pearson IC and rank IC;
-- signed and long-only equal-notional portfolios;
-- cumulative selection ranges `qr100`, `qr75`, `qr50`, and `qr25`;
-- combined 2024-2025 statistics and separate 2024 and 2025 summaries;
-- the equal-date mean prediction rank-correlation matrix;
-- an eight-model ensemble formed by averaging within-date rank z-scores.
-
-Backtest outputs are:
+The backtest reports IC, Rank IC, and signed and long-only equal-notional portfolios at `qr100`, `qr75`, `qr50`, and `qr25`. It produces combined and annual summaries, prediction correlations, and an ensemble averaging the eight models' within-date rank z-scores.
 
 | File | Contents |
 | --- | --- |
@@ -258,15 +224,17 @@ Backtest outputs are:
 | `ensemble_predictions.parquet` | Eight-model ensemble score by stock-date |
 | `daily_predictive_metrics.csv` | Daily IC and rank IC by model |
 | `predictive_summary.csv` | Combined and annual predictive summaries |
-| `daily_portfolios.parquet` | Daily portfolio sufficient statistics |
+| `daily_portfolios.parquet` | Daily PnL, notional, and position counts |
 | `portfolio_summary.csv` | Combined and annual PnL, PPD, Sharpe, hit-rate, and position summaries |
+
+PPD is stored as a ratio (multiply by 10,000 for basis points), Sharpe uses daily gross PnL, and `nr_trades` counts selected stock-days.
 
 ## Tests
 
-Run the full test suite from the repository root:
+Run the tests from the repository root:
 
 ```bash
 python -m pytest
 ```
 
-The tests cover feature dimensions and order, label windows, rolling splits, model construction, validation metrics, prediction alignment, ensemble construction, and portfolio accounting.
+Tests cover features, labels, rolling splits, models, validation metrics, prediction alignment, ensembles, and portfolio accounting.
